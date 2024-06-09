@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-contract ETH_AVAX_proj2{
-    string public textVal;
+contract VotingSystem {
+    mapping(string => uint256) private votes;
 
-    event StoreText(string s);
+    event VoteCasted(string candidate, uint256 votes);
 
-    function set(string memory myText) public{
-        textVal = myText;
-        emit StoreText(myText);
+    function vote(string memory candidate) public {
+        votes[candidate]++;
+        emit VoteCasted(candidate, votes[candidate]);
     }
 
-    function get() public view returns(string memory){
-        return textVal;
+    function getVotes(string memory candidate) public view returns (uint256) {
+        return votes[candidate];
     }
 }
