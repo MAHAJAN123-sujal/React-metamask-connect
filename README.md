@@ -1,10 +1,10 @@
 # ETH_AVAX_proj2
 
-This project connects a React application to MetaMask, allowing users to set and get a text message stored on the Ethereum blockchain using a smart contract.
+This project connects a React application to MetaMask, allowing users to vote for candidates and retrieve vote counts stored on the Ethereum blockchain using a smart contract.
 
 ## Description
 
-The `ETH_AVAX_proj2` project includes a smart contract and a React frontend that interact with each other. The smart contract allows users to store and retrieve a text message, while the React application connects to MetaMask for user authentication and interaction with the smart contract.
+The `ETH_AVAX_proj2` project includes a smart contract and a React frontend that interact with each other. The smart contract allows users to vote for candidates and retrieve the vote count for a candidate, while the React application connects to MetaMask for user authentication and interaction with the smart contract.
 
 ## Contract Details
 
@@ -12,28 +12,28 @@ The `ETH_AVAX_proj2` smart contract is written in Solidity and includes the foll
 
 ### State Variables
 
-- `string public textVal`: Stores the current text message.
+- `mapping(string => uint256) private votes`: Stores the vote count for each candidate.
 
 ### Events
 
-- `event StoreText(string s)`: Emitted when a new text message is stored.
+- `event VoteCasted(string candidate, uint256 votes)`: Emitted when a new vote is cast.
 
 ### Functions
 
-#### set
+#### vote
 
 ```solidity
-function set(string memory myText) public {
-    textVal = myText;
-    emit StoreText(myText);
+function vote(string memory candidate) public {
+    votes[candidate]++;
+    emit VoteCasted(candidate, votes[candidate]);
 }
 ```
 
-#### get
+#### getVotes
 
 ```solidity
-function get() public view returns (string memory) {
-    return textVal;
+function getVotes(string memory candidate) public view returns (uint256) {
+    return votes[candidate];
 }
 ```
 
@@ -102,21 +102,28 @@ const updateEthers = () => {
 };
 ```
 
-- **getCurrVal**: Retrieves the current text message from the smart contract.
+- **voteHandler**: Casts a vote for a candidate.
 
 ```javascript
-const getCurrVal = async () => {
-    let val = await contract.get();
-    setCurrContractVal(val);
+const voteHandler = (event) => {
+    event.preventDefault();
+    const candidate = event.target.candidateName.value;
+    contract.vote(candidate)
+        .then(() => {
+            getVotes(candidate);
+        })
+        .catch(error => {
+            console.log(error);
+        });
 };
 ```
 
-- **setHandler**: Sets a new text message in the smart contract.
+- **getVotes**: Retrieves the vote count for a candidate.
 
 ```javascript
-const setHandler = (event) => {
-    event.preventDefault();
-    contract.set(event.target.setText.value);
+const getVotes = async (candidate) => {
+    let votes = await contract.getVotes(candidate);
+    setVoteCount(votes.toString());
 };
 ```
 
@@ -125,15 +132,20 @@ const setHandler = (event) => {
 ```javascript
 return (
     <>
-        <h3>Getting and setting up message using Smart Contract</h3>
+        <h3>Voting System using Smart Contract</h3>
         <button onClick={connWalletHandler}>{connButtonText}</button>
         <h4>Address: {defaultAccount}</h4>
-        <form onSubmit={setHandler}>
-            <input id='setText' type="text" />
-            <button type="submit">Set Current text</button>
+        <form onSubmit={voteHandler}>
+            <input id='candidateName' type="text" placeholder="Candidate Name" />
+            <button type="submit">Vote</button>
         </form>
-        <button onClick={getCurrVal}>Get current value</button>
-        <div>{currContractVal}</div>
+        <form onSubmit={(e) => { e.preventDefault(); getVotes(e.target.candidateName.value); }}>
+            <input id='candidateName' type="text" placeholder="Candidate Name" />
+            <button type="submit">Get Vote Count</button>
+        </form>
+        <div>
+            {voteCount !== null && <p>Vote Count: {voteCount}</p>}
+        </div>
         {errorMessage}
     </>
 );
